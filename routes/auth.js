@@ -19,32 +19,44 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log("Login payload:", { email, password: !!password });
 
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
     const user = await User.findOne({ email });
+    console.log("User from DB:", user);
+
     if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({ error: "No user found" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log("Password match:", isMatch);
+
     if (!isMatch) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({ error: "Incorrect password" });
     }
 
-    const token = jwt.sign({ userId: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: "1d" }
-      
+    if (!process.env.JWT_SECRET) {
+      console.error("Missing JWT_SECRET:", process.env.JWT_SECRET);
+      return res.status(500).json({ error: "Server error: JWT not configured" });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, isAdmin: user.isAdmin },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
     );
 
-    // Since your schema doesn't have 'name', exclude it or add it to schema.
-    res.json({ token, user: { name: user.name, email: user.email, isAdmin: user.isAdmin } });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ error: "Server error during login" });
+    return res.json({ token, user: { name: user.name, email: user.email, isAdmin: user.isAdmin } });
+  } catch (err) {
+    console.error("Login exception:", err.message, err.stack);
+    return res.status(500).json({ error: "Unexpected server error" });
   }
 });
+
 
 
 module.exports = router;

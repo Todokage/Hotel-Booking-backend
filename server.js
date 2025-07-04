@@ -2,10 +2,12 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
+console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
+console.log("MONGO_URI exists:", !!process.env.MONGO_URI);
+
 
 const app = express();
 
-app.use(cors());
 app.use(express.json());
 
 app.use(cors({ origin: ["http://localhost:3000", "https://hotel-booking-frontend-six-flax.vercel.app"], credentials: true }));
